@@ -51,24 +51,11 @@ let handleGetAllUsers = async (req, res) => {
 }
 //sửa
 let handleUpdate = async (req, res) => {
+    let data = req.body
+    let message = await userService.UpdateUserData(data)
 
-    let id = req.body.id
-    let email = req.body.email
-    let password = req.body.password
-    let roleId = req.body.roleId
-    if (!id || !email || !password || !roleId) {
-        return res.status(500).json({
-            errCode: 1,
-            message: 'Missing required parameters!'
-        })
-    }
-    let userData = await userService.handleUpdateUser(id, email, password, roleId)
-// console.log(userData)
-    return res.status(200).json({
-        errCode: userData.errCode,
-        message: userData.errMessage,
-        user: userData.user ? userData.user : {}
-    })
+    return res.status(200).json(message)
+   
 }
 //xóa
 let handleDelete = async (req, res) => {
@@ -94,10 +81,23 @@ let handleDelete = async (req, res) => {
 
     return res.status(200).json(message)
  }
+ let getAllCode = async ( req, res) => {
+    try {
+        let data = await userService.getAllCodeService(req.query.type);
+        return res.status(200).json(data)
+    } catch (e) {
+        console.log('get allcode err: ', e)
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from server'
+        })
+    }
+ }
 module.exports = {
     handleLogin: handleLogin,
     handleGetAllUsers: handleGetAllUsers,
     handleUpdate: handleUpdate,
     handleDelete: handleDelete,
     handleCreateNewUser: handleCreateNewUser,
+    getAllCode: getAllCode
 }

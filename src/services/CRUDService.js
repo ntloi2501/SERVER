@@ -20,6 +20,9 @@ await db.User.create({
     gender: data.gender === '1' ? true : false,
     roleId: data.roleId,
 })
+console.log("-------check add a user-------")
+console.log(data)
+console.log("-------check add a user-------")
 resolve('Ok create a new user successfully!')
 
 } catch (e) {

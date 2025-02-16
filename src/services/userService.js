@@ -23,7 +23,7 @@ let handleUserLogin = (email, password) => {
                 //user already exist               
                 let user = await db.User.findOne({
                     where: { email: email},
-                    attributes: ['email', 'roleId', 'password'],
+                    attributes: ['email', 'roleId', 'password', 'firstName', 'lastName'],
                     raw: true
                 })
                 if (user) {
@@ -99,40 +99,39 @@ let getAllUsers = (userId) => {
     })
 }
 //xử lý sửa
-let handleUpdateUser = (id, email, password, roleId) => {
+let UpdateUserData = (data) => {
     return new Promise(async (resolve, rejects) => {
         try {
-            let userData = {}
-            // Kiểm tra xem user có tồn tại hay không
-            let user = await db.User.findOne({
-                where: { id: id }
-            })
-            if (user) {
-                // Mã hóa lại mật khẩu trước khi lưu
-                let hashedPassword = await bcrypt.hashSync(password, 10)
-                // Cập nhật thông tin user
-                user = await db.User.update(
-                    {
-                        email: email,
-                        password: hashedPassword,
-                        roleId: roleId
-                    },
-                    {
-                        where: { id: id }
-                    }
-                )
-                userData.errCode = 0
-                userData.errMessage = 'User updated successfully!'
-                userData.user = {
-                    id: id,
-                    email: email,
-                    roleId: roleId
-                }
-            } else {
-                userData.errCode = 2
-                userData.errMessage = "User not found!"
+            if(!data.id || !data.roleId || !data.positionId || !data.gender) {
+                resolve({
+                    errCode: 2,
+                    errMessage: "khong co du lieu tham chieu"
+                })
             }
-            resolve(userData)
+            let user = await db.User.findOne ({
+                where: {id: data.id},
+                raw: false
+            })
+            if(user) {   
+                user.firstName = data.firstName;
+                user.lastName = data.lastName;
+                user.address = data.address;
+                user.roleId = data.roleId;
+                user.positionId = data.positionId;
+                user.gender = data.gender;
+                user.phoneNumber = data.phoneNumber;
+
+                await user.save();
+            resolve({
+                errCode: 0,
+                message: "Update user successed!"
+            })
+            }else {
+                resolve({
+                    errCode: 1,
+                    errMessage: `user not found!`
+                })
+            }
         } catch (e) {
             rejects(e)
         }
@@ -172,13 +171,13 @@ let createNewUser = (data) => {
         if(check === true) {
             resolve({
                 errCode: 1,
-                message: 'Email đã tồn tại, vui lòng nhập email khác'
+                errMessage: 'Email đã tồn tại, vui lòng nhập email khác'
             })
-        }
-        let hashPasswordFromBcrypt = await hashUserPassword(data.password);
-        console.log('check add a new user--------')
-        console.log(data)
-        console.log('check add a new user--------')
+        }else {
+            let hashPasswordFromBcrypt = await hashUserPassword(data.password);
+        // console.log('check add a new user--------')
+        // console.log(data)
+        // console.log('check add a new user--------')
             await db.User.create({
             email: data.email,
             password: hashPasswordFromBcrypt,
@@ -186,24 +185,51 @@ let createNewUser = (data) => {
             lastName: data.lastName,
             address: data.address,
             phoneNumber: data.phoneNumber,  
-            gender: data.gender === '1' ? true : false,
+            gender: data.gender,
             roleId: data.roleId,
-})
-        } catch (e) {
+            positionId: data.positionId
+        })
+            resolve({
+                errCode: 0,
+                message: 'OK'
+            })
+        }       
+    } catch (e) {
             rejects(e)
         }  
-    resolve({
-        errCode: 0,
-        message: 'OK'
+
     })
+}
+
+let getAllCodeService = (typeInput) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if(!typeInput) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'không có dữ liệu tham chiếu !'
+                });
+            }else {
+                let res = {};
+                let allcode = await db.Allcode.findAll({
+                    where: { type: typeInput }
+                })
+                res.errCode = 0;
+                res.data = allcode;
+                resolve(res)
+            }
+        } catch (e) {
+            reject(e)
+        }
     })
 }
 module.exports = {
     handleUserLogin: handleUserLogin,
     checkUserEmail: checkUserEmail,
     getAllUsers: getAllUsers,
-    handleUpdateUser: handleUpdateUser,
+    UpdateUserData: UpdateUserData,
     handleDeleteUser: handleDeleteUser,
     createNewUser: createNewUser,
-    hashUserPassword: hashUserPassword
+    hashUserPassword: hashUserPassword,
+    getAllCodeService: getAllCodeService
 }
